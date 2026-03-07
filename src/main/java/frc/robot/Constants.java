@@ -39,6 +39,7 @@ public final class Constants {
 
     // Unclassified 
     public static final class UnclassifiedCanIds{
+      // Move these when we have determined what the modules are being used for
       public static final int kLeftSideModuleCanId = 17;
       public static final int kRightSideModuleCanId = 22;
       public static final int kRearCenterModuleCanId = 29;
