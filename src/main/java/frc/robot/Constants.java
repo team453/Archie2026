@@ -37,6 +37,13 @@ public final class Constants {
       public static final int kRearRightTurningCanId = 8;
     }
 
+    // Unclassified 
+    public static final class UnclassifiedCanIds{
+      public static final int kLeftSideModuleCanId = 17;
+      public static final int kRightSideModuleCanId = 22;
+      public static final int kRearCenterModuleCanId = 29;
+    }
+
     // Shooter
     public static final class ShooterCanIds {
 
