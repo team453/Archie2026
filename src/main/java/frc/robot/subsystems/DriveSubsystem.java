@@ -14,7 +14,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
-import com.ctre.phoenix.sensors.PigeonIMU;
+import com.ctre.phoenix6.hardware.Pigeon2;
 
 import frc.robot.Constants.CanIds;
 import frc.robot.Constants.DriveConstants;
@@ -45,8 +45,8 @@ public class DriveSubsystem extends SubsystemBase {
       CanIds.DriveCanIds.kRearRightTurningCanId,
       DriveConstants.kBackRightChassisAngularOffset);
 
-  // The gyro sensor (CTRE Pigeon 1.0 — uses Phoenix 5)
-  private final PigeonIMU m_gyro = new PigeonIMU(frc.robot.Constants.DriveConstants.kPigeonCanId);
+  // The gyro sensor (CTRE Pigeon 2.0 — Phoenix 6)
+  private final Pigeon2 m_gyro = new Pigeon2(DriveConstants.kPigeonCanId);
   // Fallback state for detecting stale/no CAN frames from the Pigeon
   private double m_lastHeading = 0.0; // degrees
   private int m_consecutiveStaleGyro = 0;
@@ -194,13 +194,13 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-    // Phoenix 5 PigeonIMU: getYawPitchRoll fills [yaw, pitch, roll] in degrees
-    double[] ypr = new double[3];
-    m_gyro.getYawPitchRoll(ypr);
-    double raw = ypr[0];
+    // Phoenix 6 Pigeon2: getYaw() returns a StatusSignal in degrees
+    double raw = m_gyro.getYaw().getValueAsDouble();
+    double pitch = m_gyro.getPitch().getValueAsDouble();
+    double roll = m_gyro.getRoll().getValueAsDouble();
 
     // Detect stale readings (all zero from CAN timeout)
-    boolean allZero = Math.abs(ypr[0]) < 1e-6 && Math.abs(ypr[1]) < 1e-6 && Math.abs(ypr[2]) < 1e-6;
+    boolean allZero = Math.abs(raw) < 1e-6 && Math.abs(pitch) < 1e-6 && Math.abs(roll) < 1e-6;
 
     if (allZero) {
       m_consecutiveStaleGyro++;
@@ -226,14 +226,13 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The turn rate of the robot, in degrees per second
    */
   public double getTurnRate() {
-    // Phoenix 5 PigeonIMU: getRawGyro fills [x, y, z] rates in deg/s; z is yaw
-    double[] rawRates = new double[3];
-    m_gyro.getRawGyro(rawRates);
+    // Phoenix 6 Pigeon2: getAngularVelocityZWorld() returns deg/s about the Z axis
+    double yawRate = m_gyro.getAngularVelocityZWorld().getValueAsDouble();
 
-    if (Math.abs(rawRates[0]) < 1e-6 && Math.abs(rawRates[1]) < 1e-6 && Math.abs(rawRates[2]) < 1e-6) {
+    if (Math.abs(yawRate) < 1e-6) {
       return 0.0;
     }
     m_consecutiveStaleGyro = 0;
-    return -rawRates[2] * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
+    return -yawRate * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
 }
