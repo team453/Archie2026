@@ -17,11 +17,12 @@ import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.PS4Controller.Button;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
 import frc.robot.subsystems.DriveSubsystem;
+import frc.robot.subsystems.ShooterSubsystem;
+import frc.robot.subsystems.FeederSubsystem;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
@@ -44,6 +45,8 @@ import com.pathplanner.lib.auto.AutoBuilder;
 public class RobotContainer {
   // The robot's subsystems
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
+  private final ShooterSubsystem m_shooter = new ShooterSubsystem();
+  private final FeederSubsystem m_feeder = new FeederSubsystem();
 
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
@@ -83,7 +86,8 @@ public class RobotContainer {
   private void configureButtonBindings() {
 
     // Set up driver controller
-    new JoystickButton(m_driverController, Button.kR1.value)
+    // Back button -> lock wheels in X formation
+    new JoystickButton(m_driverController, XboxController.Button.kBack.value)
         .whileTrue(new RunCommand(
             () -> m_robotDrive.setX(),
             m_robotDrive));
@@ -104,7 +108,29 @@ public class RobotContainer {
             },
             m_robotDrive));
 
-    // TODO: Set up operator controller
+    // --- Driver controller: Shoot + Feed bindings ---
+    // Each button spins up its shooter motor and feeds when at RPM.
+    // All require both Shooter + Feeder subsystems, so they pre-empt each other.
+
+    // X button -> Spin shooter 0 + feed when ready
+    new JoystickButton(m_driverController, XboxController.Button.kX.value)
+        .whileTrue(m_feeder.shootAndFeed0Command(m_shooter));
+
+    // Y button -> Spin shooter 1 + feed when ready
+    new JoystickButton(m_driverController, XboxController.Button.kY.value)
+        .whileTrue(m_feeder.shootAndFeed1Command(m_shooter));
+
+    // A button -> Spin shooter 2 + feed when ready
+    new JoystickButton(m_driverController, XboxController.Button.kA.value)
+        .whileTrue(m_feeder.shootAndFeed2Command(m_shooter));
+
+    // Left bumper -> Spin ALL shooters + feed when ready
+    new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value)
+        .whileTrue(m_feeder.shootAndFeedCommand(m_shooter));
+
+    // Right bumper -> REVERSE ALL shooters + feeder (unjam)
+    new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
+        .whileTrue(m_feeder.reverseAllCommand(m_shooter));
   }
 
   /**

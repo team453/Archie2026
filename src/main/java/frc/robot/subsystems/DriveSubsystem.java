@@ -45,7 +45,7 @@ public class DriveSubsystem extends SubsystemBase {
       CanIds.DriveCanIds.kRearRightTurningCanId,
       DriveConstants.kBackRightChassisAngularOffset);
 
-  // The gyro sensor (CTRE Pigeon on CAN bus)
+  // The gyro sensor (CTRE Pigeon 1.0 — uses Phoenix 5)
   private final PigeonIMU m_gyro = new PigeonIMU(frc.robot.Constants.DriveConstants.kPigeonCanId);
   // Fallback state for detecting stale/no CAN frames from the Pigeon
   private double m_lastHeading = 0.0; // degrees
@@ -185,8 +185,6 @@ public class DriveSubsystem extends SubsystemBase {
 
   /** Zeroes the heading of the robot. */
   public void zeroHeading() {
-    // PigeonIMU provides setYaw to reset the yaw to a specific value.
-    // Ignore the returned ErrorCode for simplicity.
     m_gyro.setYaw(0.0);
   }
 
@@ -196,39 +194,30 @@ public class DriveSubsystem extends SubsystemBase {
    * @return the robot's heading in degrees, from -180 to 180
    */
   public double getHeading() {
-  // Some gyros report the sign opposite of WPILib expectations depending on
-  // mounting orientation. Use a fixed negation and then apply kGyroReversed
-  // to allow flipping without changing code elsewhere.
-  // Use the PigeonIMU yaw value. getYawPitchRoll fills an array with
-  // [yaw, pitch, roll] (degrees). If the call fails the array will still be
-  // used but may contain zeros.
-  double[] ypr = new double[3];
-  m_gyro.getYawPitchRoll(ypr);
-  double raw = ypr[0];
+    // Phoenix 5 PigeonIMU: getYawPitchRoll fills [yaw, pitch, roll] in degrees
+    double[] ypr = new double[3];
+    m_gyro.getYawPitchRoll(ypr);
+    double raw = ypr[0];
 
-  // Detect all-zero (likely stale) readings. It's possible for a real
-  // heading to be very near zero, but repeated consecutive exact-zero
-  // readings are a good heuristic for a failed JNI/CAN read (logs show
-  // frequent 'CAN frame not received/too-stale' messages).
-  boolean allZero = Math.abs(ypr[0]) < 1e-6 && Math.abs(ypr[1]) < 1e-6 && Math.abs(ypr[2]) < 1e-6;
-  if (allZero) {
-    m_consecutiveStaleGyro++;
-    if (m_consecutiveStaleGyro > kStaleThreshold) {
-      // Return last-known heading (normalized) while hardware is flaky
-      double normalized = ((m_lastHeading + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
-      return normalized;
+    // Detect stale readings (all zero from CAN timeout)
+    boolean allZero = Math.abs(ypr[0]) < 1e-6 && Math.abs(ypr[1]) < 1e-6 && Math.abs(ypr[2]) < 1e-6;
+
+    if (allZero) {
+      m_consecutiveStaleGyro++;
+      if (m_consecutiveStaleGyro > kStaleThreshold) {
+        double normalized = ((m_lastHeading + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+        return normalized;
+      }
+    } else {
+      m_consecutiveStaleGyro = 0;
+      m_lastHeading = -raw * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
     }
-  } else {
-    // Good reading: reset stale counter and update last-known heading
-    m_consecutiveStaleGyro = 0;
-    m_lastHeading = -raw * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
-  }
 
-  double angle = -raw; // preserve previous negation behavior
-  angle = angle * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
-  // Normalize to [-180, 180)
-  double normalized = ((angle + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
-  return normalized;
+    double angle = -raw;
+    angle = angle * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
+    // Normalize to [-180, 180)
+    double normalized = ((angle + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+    return normalized;
   }
 
   /**
@@ -237,19 +226,14 @@ public class DriveSubsystem extends SubsystemBase {
    * @return The turn rate of the robot, in degrees per second
    */
   public double getTurnRate() {
-  // Match sign convention used by getHeading() (negated above)
-  // PigeonIMU.getRawGyro fills array with angular rates [x, y, z] in
-  // degrees/sec. The z element is the yaw rate.
-  double[] rawRates = new double[3];
-  m_gyro.getRawGyro(rawRates);
-  boolean allZeroRates = Math.abs(rawRates[0]) < 1e-6 && Math.abs(rawRates[1]) < 1e-6 && Math.abs(rawRates[2]) < 1e-6;
-  if (allZeroRates) {
-    // Stale/noisy gyro read — return zero rate until readings recover
-    return 0.0;
-  }
-  double yawRate = rawRates[2];
-  // Reset stale counter if we got a valid rate
-  m_consecutiveStaleGyro = 0;
-  return -yawRate * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
+    // Phoenix 5 PigeonIMU: getRawGyro fills [x, y, z] rates in deg/s; z is yaw
+    double[] rawRates = new double[3];
+    m_gyro.getRawGyro(rawRates);
+
+    if (Math.abs(rawRates[0]) < 1e-6 && Math.abs(rawRates[1]) < 1e-6 && Math.abs(rawRates[2]) < 1e-6) {
+      return 0.0;
+    }
+    m_consecutiveStaleGyro = 0;
+    return -rawRates[2] * (DriveConstants.kGyroReversed ? -1.0 : 1.0);
   }
 }
