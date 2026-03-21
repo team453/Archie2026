@@ -27,7 +27,7 @@ public final class Constants {
     // Drive
     public static final class DriveCanIds {
       public static final int kFrontLeftDrivingCanId = 7;
-      public static final int kRearLeftDrivingCanId = 3;
+      public static final int kRearLeftDrivingCanId = 9;
       public static final int kFrontRightDrivingCanId = 5;
       public static final int kRearRightDrivingCanId = 18;
 
@@ -39,14 +39,17 @@ public final class Constants {
 
     // Unclassified 
     public static final class UnclassifiedCanIds{
-      public static final int kLeftSideModuleCanId = 17;
+      // Move these when we have determined what the modules are being used for
+      //public static final int kLeftSideModuleCanId = 17;
       public static final int kRightSideModuleCanId = 22;
       public static final int kRearCenterModuleCanId = 29;
     }
 
     // Shooter
     public static final class ShooterCanIds {
-
+      public static final int kShooterMotor0CanId = 0;
+      public static final int kShooterMotor1CanId = 1;
+      public static final int kShooterMotor2CanId = 3;
     }
 
     // Lift
@@ -57,6 +60,11 @@ public final class Constants {
     // Hopper?
     public static final class HopperCanIds {
 
+    }
+
+    // Feeder (SPARK MAX + SOLO adapter + Vortex motor)
+    public static final class FeederCanIds {
+      public static final int kFeederMotorCanId = 17;
     }
   }
 
@@ -138,5 +146,33 @@ public final class Constants {
 
   public static final class NeoMotorConstants {
     public static final double kFreeSpeedRpm = 5676;
+  }
+
+  public static final class ShooterConstants {
+    // Target RPM for the shooter wheels (adjust to taste)
+    public static final double kShooterTargetRPM = 4000.0;
+
+    // PID gains for velocity (RPM) closed-loop on the Falcon 500 / TalonFX
+    public static final double kP = 0.1;
+    public static final double kI = 0.0;
+    public static final double kD = 0.0;
+
+    // Feed-forward: approximate kV for a Falcon 500
+    // Falcon free speed ≈ 6380 RPM → kV ≈ 12 V / 6380 RPM ≈ 0.0019 V/RPM
+    // Phoenix 6 velocity is in rotations/s, so convert: 6380 RPM = 106.3 rps → kV ≈ 12/106.3 ≈ 0.113 V/rps
+    public static final double kV = 0.113;
+    public static final double kS = 0.25; // static friction voltage offset
+  }
+
+  public static final class FeederConstants {
+    // Duty-cycle output for the feeder flappers (0.0–1.0)
+    public static final double kFeedSpeed = 0.8;
+
+    // How close the shooter must be to its target RPM before feeding is allowed
+    // e.g. within ±200 RPM of the target
+    public static final double kShooterRPMTolerance = 200.0;
+
+    // Current limit to protect the Vortex
+    public static final int kCurrentLimit = 40;
   }
 }
