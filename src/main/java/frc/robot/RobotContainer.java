@@ -135,7 +135,7 @@ public class RobotContainer {
     Trajectory seg1 = TrajectoryGenerator.generateTrajectory(
         new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(0.0)),
         List.of(),
-        new Pose2d(0.0, -L, Rotation2d.fromDegrees(0.0)),
+        new Pose2d(0.0, 0.0, Rotation2d.fromDegrees(0.0)),
         config
     );
 
@@ -232,10 +232,17 @@ public class RobotContainer {
     System.out.println("Fallback auto: spin 360 in place for " + seconds + " seconds @ omega=" + omegaRadPerSec);
 
     return new RunCommand(
-            () -> m_robotDrive.drive(0.0, 0.0, omegaRadPerSec / DriveConstants.kMaxAngularSpeed, false),
+            () -> m_robotDrive.drive(0.0, 0.0, 0, false),
             m_robotDrive)
         .withTimeout(seconds)
         .andThen(new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false), m_robotDrive));
+   // spinInPlace360Fallback
+
+    //return new RunCommand(
+       //     () -> m_robotDrive.drive(0.0, 0.0, omegaRadPerSec / DriveConstants.kMaxAngularSpeed, false),
+      //      m_robotDrive)
+     //   .withTimeout(seconds)
+    //    .andThen(new InstantCommand(() -> m_robotDrive.drive(0, 0, 0, false), m_robotDrive));
   } // spinInPlace360Fallback
 
   private void logDeployedPathPlannerFiles() {
