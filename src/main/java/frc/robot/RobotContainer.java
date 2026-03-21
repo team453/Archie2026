@@ -131,6 +131,15 @@ public class RobotContainer {
     // Right bumper -> REVERSE ALL shooters + feeder (unjam)
     new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
         .whileTrue(m_feeder.reverseAllCommand(m_shooter));
+
+  // ----- DEBUG: Manual feeder controls (bypass shooter readiness) -----
+  // Right Stick button -> run feeder forward while held (quick test)
+  new JoystickButton(m_driverController, XboxController.Button.kRightStick.value)
+    .whileTrue(m_feeder.feedCommand());
+
+  // Left Stick button -> run feeder in reverse while held (unjam test)
+  new JoystickButton(m_driverController, XboxController.Button.kLeftStick.value)
+    .whileTrue(m_feeder.reverseCommand());
   }
 
   /**

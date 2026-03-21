@@ -46,16 +46,22 @@ public class FeederSubsystem extends SubsystemBase {
   /** Run the feeder flappers forward at the configured feed speed. */
   public void feed() {
     m_feederMotor.set(FeederConstants.kFeedSpeed);
+    SmartDashboard.putBoolean("Feeder/Running", true);
+    System.out.println("FeederSubsystem: feed() -> output=" + FeederConstants.kFeedSpeed);
   }
 
   /** Run the feeder in reverse (eject / unjam). */
   public void reverse() {
     m_feederMotor.set(-FeederConstants.kFeedSpeed);
+    SmartDashboard.putBoolean("Feeder/Running", true);
+    System.out.println("FeederSubsystem: reverse() -> output=" + -FeederConstants.kFeedSpeed);
   }
 
   /** Stop the feeder motor. */
   public void stop() {
     m_feederMotor.set(0.0);
+    SmartDashboard.putBoolean("Feeder/Running", false);
+    System.out.println("FeederSubsystem: stop() -> output=0.0");
   }
 
   // ---------------------------------------------------------------------------
@@ -209,5 +215,10 @@ public class FeederSubsystem extends SubsystemBase {
   public void periodic() {
     SmartDashboard.putNumber("Feeder/Output", m_feederMotor.getAppliedOutput());
     SmartDashboard.putNumber("Feeder/Current", m_feederMotor.getOutputCurrent());
+    // Also expose a simple boolean for whether the feeder is actively running
+    // (set by feed/reverse/stop). This helps verify button bindings are firing.
+    if (!SmartDashboard.containsKey("Feeder/Running")) {
+      SmartDashboard.putBoolean("Feeder/Running", false);
+    }
   }
 }
