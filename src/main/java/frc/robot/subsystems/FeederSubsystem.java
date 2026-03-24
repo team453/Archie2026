@@ -14,6 +14,9 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import frc.robot.Constants.CanIds.FeederCanIds;
 import frc.robot.Constants.FeederConstants;
+import frc.robot.Constants.ShooterConstants;
+
+import java.util.function.DoubleSupplier;
 
 /**
  * FeederSubsystem controls a single Vortex motor via a SPARK MAX + SOLO adapter.
@@ -111,6 +114,30 @@ public class FeederSubsystem extends SubsystemBase {
         // require BOTH subsystems so this pre-empts individual commands
         this, shooter
     ).withName("ShootAndFeed");
+  }
+
+  public Command shootAndFeedVariableRPMCommand(ShooterSubsystem shooter, DoubleSupplier targetRPMSupplier) {
+    return new FunctionalCommand(
+        () -> {},
+        () -> {
+          // double targetRPM = targetRPMSupplier.getAsDouble();
+          double rawTriggerValue = targetRPMSupplier.getAsDouble();
+          // Map trigger value (0.0–1.0) to a reasonable RPM range
+          double targetRPM = ShooterConstants.kShooterMinRPM + rawTriggerValue * (ShooterConstants.kShooterMaxRPM - ShooterConstants.kShooterMinRPM);
+          shooter.spinAllVariableRPM(targetRPM);
+          if (shooter.isAtTargetVariableRPM(targetRPM, FeederConstants.kShooterRPMTolerance)) {
+            feed();
+          } else {
+            stop();
+          }
+        },
+        interrupted -> {
+          stop();
+          shooter.stopAll();
+        },
+        () -> false,
+        this, shooter
+    ).withName("ShootAndFeedVariableRPM");
   }
 
   /**
