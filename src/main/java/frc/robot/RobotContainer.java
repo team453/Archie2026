@@ -124,18 +124,18 @@ public class RobotContainer {
     new JoystickButton(m_driverController, XboxController.Button.kA.value)
         .whileTrue(m_feeder.shootAndFeed2Command(m_shooter));
 
-    // Left bumper -> Spin ALL shooters + feed when ready
-    new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value)
+    // Right bumper -> Spin ALL shooters + feed when ready
+    new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
         .whileTrue(m_feeder.shootAndFeedCommand(m_shooter));
 
-    // Right bumper -> REVERSE ALL shooters + feeder (unjam)
-    new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
+    // Left bumper -> REVERSE ALL shooters + feeder (unjam)
+    new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value)
         .whileTrue(m_feeder.reverseAllCommand(m_shooter));
 
-    // Left analog trigger -> Spin ALL shooters at variable RPM based on trigger axis, feed when at target RPM
-    new JoystickButton(m_driverController, XboxController.Axis.kLeftTrigger.value)
+    // Right analog trigger -> Spin ALL shooters at variable RPM based on trigger axis, feed when at target RPM
+    new JoystickButton(m_driverController, XboxController.Axis.kRightTrigger.value)
         .whileTrue(m_feeder.shootAndFeedVariableRPMCommand(m_shooter, 
-                  () -> m_driverController.getLeftTriggerAxis()));
+                  () -> m_driverController.getRightTriggerAxis()));
 
     // ----- DEBUG: Manual feeder controls (bypass shooter readiness) -----
     // Right Stick button -> run feeder forward while held (quick test)
