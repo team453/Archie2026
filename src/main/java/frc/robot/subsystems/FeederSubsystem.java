@@ -34,6 +34,7 @@ public class FeederSubsystem extends SubsystemBase {
     SparkMaxConfig config = new SparkMaxConfig();
     config
         .idleMode(IdleMode.kBrake)          // Hold fuel in place when not feeding
+        .inverted(true)
         .smartCurrentLimit(FeederConstants.kCurrentLimit);
 
     m_feederMotor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
