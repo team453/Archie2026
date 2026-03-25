@@ -66,6 +66,11 @@ public final class Constants {
     public static final class FeederCanIds {
       public static final int kFeederMotorCanId = 17;
     }
+
+    public static final class IntakeCanIds {
+      public static final int kPivotMotorCanId = 22;
+      public static final int kIntakeMotorCanId = 31;
+    }
   }
 
 
@@ -179,9 +184,7 @@ public final class Constants {
     public static final int kCurrentLimit = 40;
   }
 
- public class IntakeSubsystemConstants {
-    public static int kPivotMotorCanId = 32;
-    public static int kIntakeMotorCanId = 31;
+  public class IntakeSubsystemConstants {
     public static int kPivotEncoderPort = 9;
     public static double kP = 26.0; //24.0;
     public static double kI = 0.75;

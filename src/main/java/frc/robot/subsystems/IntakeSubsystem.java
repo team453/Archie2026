@@ -18,6 +18,7 @@ import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import frc.robot.Constants;
 
 public class IntakeSubsystem extends SubsystemBase {
     private final TalonFX m_intakeMotorFx;
@@ -32,8 +33,8 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double CATCH_POSITION = 0.215;
 
     public IntakeSubsystem() {
-        m_intakeMotorFx = new TalonFX(IntakeSubsystemConstants.kIntakeMotorCanId);
-        m_pivotMotor = new SparkMax(IntakeSubsystemConstants.kPivotMotorCanId, MotorType.kBrushed);
+        m_intakeMotorFx = new TalonFX(Constants.CanIds.IntakeCanIds.kIntakeMotorCanId);
+        m_pivotMotor = new SparkMax(Constants.CanIds.IntakeCanIds.kPivotMotorCanId, MotorType.kBrushed);
         m_pivotEncoder = new DutyCycleEncoder(IntakeSubsystemConstants.kPivotEncoderPort);
         m_pivotPIDController = new PIDController(IntakeSubsystemConstants.kP, IntakeSubsystemConstants.kI, IntakeSubsystemConstants.kD);
         m_pivotFeedforward = new SimpleMotorFeedforward(IntakeSubsystemConstants.kS, IntakeSubsystemConstants.kV);
@@ -43,7 +44,7 @@ public class IntakeSubsystem extends SubsystemBase {
         m_intakeMotorFx.setExpiration(0.1);
 
         m_pivotMotor.configure(
-            Configs.IntakeSubsystem.pivotConfig,
+            Configs.IntakeSubsystem.pivotConfig,    
             ResetMode.kResetSafeParameters,
             PersistMode.kPersistParameters);
 
