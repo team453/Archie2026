@@ -124,23 +124,28 @@ public class RobotContainer {
     new JoystickButton(m_driverController, XboxController.Button.kA.value)
         .whileTrue(m_feeder.shootAndFeed2Command(m_shooter));
 
-    // Left bumper -> Spin ALL shooters + feed when ready
-    new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value)
+    // Right bumper -> Spin ALL shooters + feed when ready
+    new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
         .whileTrue(m_feeder.shootAndFeedCommand(m_shooter));
 
-    // Right bumper -> REVERSE ALL shooters + feeder (unjam)
-    new JoystickButton(m_driverController, XboxController.Button.kRightBumper.value)
+    // Left bumper -> REVERSE ALL shooters + feeder (unjam)
+    new JoystickButton(m_driverController, XboxController.Button.kLeftBumper.value)
         .whileTrue(m_feeder.reverseAllCommand(m_shooter));
 
-  // ----- DEBUG: Manual feeder controls (bypass shooter readiness) -----
-  // Right Stick button -> run feeder forward while held (quick test)
-  new JoystickButton(m_driverController, XboxController.Button.kRightStick.value)
-    .whileTrue(m_feeder.feedCommand());
+    // Right analog trigger -> Spin ALL shooters at variable RPM based on trigger axis, feed when at target RPM
+    new JoystickButton(m_driverController, XboxController.Axis.kRightTrigger.value)
+        .whileTrue(m_feeder.shootAndFeedVariableRPMCommand(m_shooter, 
+                  () -> m_driverController.getRightTriggerAxis()));
 
-  // Left Stick button -> run feeder in reverse while held (unjam test)
-  new JoystickButton(m_driverController, XboxController.Button.kLeftStick.value)
-    .whileTrue(m_feeder.reverseCommand());
-  }
+    // ----- DEBUG: Manual feeder controls (bypass shooter readiness) -----
+    // Right Stick button -> run feeder forward while held (quick test)
+    new JoystickButton(m_driverController, XboxController.Button.kRightStick.value)
+      .whileTrue(m_feeder.feedCommand());
+
+    // Left Stick button -> run feeder in reverse while held (unjam test)
+    new JoystickButton(m_driverController, XboxController.Button.kLeftStick.value)
+      .whileTrue(m_feeder.reverseCommand());
+    }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.

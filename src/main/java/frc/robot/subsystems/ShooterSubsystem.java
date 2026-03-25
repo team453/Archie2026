@@ -127,6 +127,12 @@ public class ShooterSubsystem extends SubsystemBase {
     spinShooter2();
   }
 
+  public void spinAllVariableRPM(double rpm) {
+    setMotorRPM(m_shooter0, rpm);
+    setMotorRPM(m_shooter1, rpm);
+    setMotorRPM(m_shooter2, rpm);
+  }
+
   /** Stop ALL three shooter motors. */
   public void stopAll() {
     stopShooter0();
@@ -176,13 +182,23 @@ public class ShooterSubsystem extends SubsystemBase {
 
   /** Returns true if ALL three shooter motors are within tolerance of the target RPM. */
   public boolean isAtTargetRPM(double toleranceRPM) {
-    double target = ShooterConstants.kShooterTargetRPM;
+    // double target = ShooterConstants.kShooterTargetRPM;
+    // double rpm0 = m_vel0.getValueAsDouble() * 60.0;
+    // double rpm1 = m_vel1.getValueAsDouble() * 60.0;
+    // double rpm2 = m_vel2.getValueAsDouble() * 60.0;
+    // return Math.abs(rpm0 - target) < toleranceRPM
+    //     && Math.abs(rpm1 - target) < toleranceRPM
+    //     && Math.abs(rpm2 - target) < toleranceRPM;
+    return isAtTargetVariableRPM(ShooterConstants.kShooterTargetRPM, toleranceRPM);
+  }
+
+  public boolean isAtTargetVariableRPM(double targetRPM, double toleranceRPM) {
     double rpm0 = m_vel0.getValueAsDouble() * 60.0;
     double rpm1 = m_vel1.getValueAsDouble() * 60.0;
     double rpm2 = m_vel2.getValueAsDouble() * 60.0;
-    return Math.abs(rpm0 - target) < toleranceRPM
-        && Math.abs(rpm1 - target) < toleranceRPM
-        && Math.abs(rpm2 - target) < toleranceRPM;
+    return Math.abs(rpm0 - targetRPM) < toleranceRPM
+        && Math.abs(rpm1 - targetRPM) < toleranceRPM
+        && Math.abs(rpm2 - targetRPM) < toleranceRPM;
   }
 
   /** Returns true if shooter motor 0 is within tolerance of the target RPM. */
