@@ -178,4 +178,16 @@ public final class Constants {
     // Current limit to protect the Vortex
     public static final int kCurrentLimit = 40;
   }
+
+ public class IntakeSubsystemConstants {
+    public static int kPivotMotorCanId = 32;
+    public static int kIntakeMotorCanId = 31;
+    public static int kPivotEncoderPort = 9;
+    public static double kP = 26.0; //24.0;
+    public static double kI = 0.75;
+    public static double kD = 0.5;
+    public static double kV = 0.0;
+    public static double kS = 0.0;
+  }
+
 }

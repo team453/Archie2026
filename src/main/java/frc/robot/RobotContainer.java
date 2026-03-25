@@ -33,6 +33,8 @@ import java.util.List;
 import java.io.File;
 import java.util.Arrays;
 
+import frc.robot.subsystems.IntakeSubsystem;
+
 // PathPlanner (make sure vendor lib is installed)
 import com.pathplanner.lib.auto.AutoBuilder;
 
@@ -47,6 +49,7 @@ public class RobotContainer {
   private final DriveSubsystem m_robotDrive = new DriveSubsystem();
   private final ShooterSubsystem m_shooter = new ShooterSubsystem();
   private final FeederSubsystem m_feeder = new FeederSubsystem();
+  private final IntakeSubsystem m_intake = new IntakeSubsystem();
 
   // The driver's controller
   XboxController m_driverController = new XboxController(OIConstants.kDriverControllerPort);
@@ -145,7 +148,23 @@ public class RobotContainer {
     // Left Stick button -> run feeder in reverse while held (unjam test)
     new JoystickButton(m_driverController, XboxController.Button.kLeftStick.value)
       .whileTrue(m_feeder.reverseCommand());
-    }
+
+
+    // Operator controller bindings (for running IntakeSubsystem)
+    new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
+        .whileTrue(m_intake.movePivot(-0.25));
+
+    new JoystickButton(m_operatorController, XboxController.Button.kRightBumper.value)
+        .whileTrue(m_intake.movePivot(0.65));
+
+    new JoystickButton(m_operatorController, XboxController.Button.kX.value)
+        .whileTrue(m_intake.moveIntake(-0.5));
+
+    // Y button -> Spin shooter 1 + feed when ready
+    new JoystickButton(m_operatorController, XboxController.Button.kY.value)
+        .whileTrue(m_intake.moveIntake(0.5));
+  
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
