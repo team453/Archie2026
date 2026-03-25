@@ -152,8 +152,8 @@ public final class Constants {
     // Target RPM for the shooter wheels (adjust to taste)
     public static final double kShooterTargetRPM = 6000.0;
     // Min/max for variable shooter RPM
-    public static final double kShooterMinRPM = 2000.0;
-    public static final double kShooterMaxRPM = 5000.0;
+    public static final double kShooterMinRPM = 3000.0;
+    public static final double kShooterMaxRPM = 6200.0;
 
     // PID gains for velocity (RPM) closed-loop on the Falcon 500 / TalonFX
     public static final double kP = 0.1;
