@@ -38,9 +38,9 @@ public class ShooterSubsystem extends SubsystemBase {
   private final NeutralOut m_neutralRequest = new NeutralOut();
 
   public ShooterSubsystem() {
-    m_shooter0 = new TalonFX(ShooterCanIds.kShooterMotor0CanId, "rio");
-    m_shooter1 = new TalonFX(ShooterCanIds.kShooterMotor1CanId, "rio");
-    m_shooter2 = new TalonFX(ShooterCanIds.kShooterMotor2CanId, "rio");
+    m_shooter0 = new TalonFX(ShooterCanIds.kShooterMotor0CanId);
+    m_shooter1 = new TalonFX(ShooterCanIds.kShooterMotor1CanId);
+    m_shooter2 = new TalonFX(ShooterCanIds.kShooterMotor2CanId);
 
     configureMotor(m_shooter0);
     configureMotor(m_shooter1);
