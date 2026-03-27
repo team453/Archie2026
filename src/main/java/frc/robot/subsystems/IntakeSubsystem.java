@@ -39,13 +39,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final String SD_PIVOT_UP_MAX = SD_PREFIX + "PivotUpMaxOutput";
     private static final String SD_PIVOT_DOWN_MAX = SD_PREFIX + "PivotDownMaxOutput";
 
-    private static final double DEFAULT_STOW_POSITION = 0.60;
-    private static final double DEFAULT_RAMP_POSITION = 0.42;
-    private static final double DEFAULT_INTAKE_POSITION = 0.24;
+    private static final double DEFAULT_STOW_POSITION = 0.180;
+    private static final double DEFAULT_RAMP_POSITION = 0.0029;
+    private static final double DEFAULT_INTAKE_POSITION = 0.881;
 
     private static final double DEFAULT_PIVOT_TOLERANCE = 0.015;
-    private static final double DEFAULT_PIVOT_UP_MAX_OUTPUT = 0.65;
-    private static final double DEFAULT_PIVOT_DOWN_MAX_OUTPUT = -0.25;
+    private static final double DEFAULT_PIVOT_UP_MAX_OUTPUT = 1.00;
+    private static final double DEFAULT_PIVOT_DOWN_MAX_OUTPUT = -0.85;
 
     // ✅ Intake motor is now SparkMax (Vortex)
     private final SparkMax m_intakeMotor;
@@ -67,6 +67,7 @@ public class IntakeSubsystem extends SubsystemBase {
         );
 
         m_pivotEncoder = new DutyCycleEncoder(IntakeSubsystemConstants.kPivotEncoderPort);
+        m_pivotEncoder.setAssumedFrequency(975.6);
 
         m_pivotPIDController = new PIDController(
             IntakeSubsystemConstants.kP,
