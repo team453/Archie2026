@@ -11,8 +11,6 @@ import frc.robot.Configs;
 import frc.robot.Constants;
 import frc.robot.Constants.IntakeSubsystemConstants;
 
-import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -52,11 +50,13 @@ public class IntakeSubsystem extends SubsystemBase {
     private static final double DEFAULT_INTAKE_POSITION = 0.88 * 360.0; // ~316.8 deg
 
     private static final double DEFAULT_PIVOT_TOLERANCE = 0.015;
-    private static final double DEFAULT_PIVOT_UP_MAX_OUTPUT = 0.65;
-    private static final double DEFAULT_PIVOT_DOWN_MAX_OUTPUT = -0.25;
+    private static final double DEFAULT_PIVOT_UP_MAX_OUTPUT = 1.00;
+    private static final double DEFAULT_PIVOT_DOWN_MAX_OUTPUT = -0.85;
 
-    private final TalonFX m_intakeMotorFx;
+    // ✅ Intake motor is now SparkMax (Vortex)
+    private final SparkMax m_intakeMotor;
     private final SparkMax m_pivotMotor;
+
     private final DutyCycleEncoder m_pivotEncoder;
     private final PIDController m_pivotPIDController;
     // For encoder unwrap/continuous angle tracking
@@ -66,18 +66,32 @@ public class IntakeSubsystem extends SubsystemBase {
     private double m_encoderZeroOffset = 0.0;
 
     public IntakeSubsystem() {
-        m_intakeMotorFx = new TalonFX(Constants.CanIds.IntakeCanIds.kIntakeMotorCanId);
-        m_pivotMotor = new SparkMax(Constants.CanIds.IntakeCanIds.kPivotMotorCanId, MotorType.kBrushed);
+        // ✅ Initialize intake SparkMax (Vortex motor = brushless)
+        m_intakeMotor = new SparkMax(
+            Constants.CanIds.IntakeCanIds.kIntakeMotorCanId,
+            MotorType.kBrushless
+        );
+
+        m_pivotMotor = new SparkMax(
+            Constants.CanIds.IntakeCanIds.kPivotMotorCanId,
+            MotorType.kBrushed
+        );
+
         m_pivotEncoder = new DutyCycleEncoder(IntakeSubsystemConstants.kPivotEncoderPort);
+        m_pivotEncoder.setAssumedFrequency(975.6);
+
         m_pivotPIDController = new PIDController(
             IntakeSubsystemConstants.kP,
             IntakeSubsystemConstants.kI,
             IntakeSubsystemConstants.kD
         );
 
-        m_intakeMotorFx.setNeutralMode(NeutralModeValue.Brake);
-        m_intakeMotorFx.setSafetyEnabled(true);
-        m_intakeMotorFx.setExpiration(0.1);
+        // Apply configs
+        m_intakeMotor.configure(
+            Configs.IntakeSubsystem.intakeConfig,
+            ResetMode.kResetSafeParameters,
+            PersistMode.kPersistParameters
+        );
 
         m_pivotMotor.configure(
             Configs.IntakeSubsystem.pivotConfig,
@@ -102,15 +116,13 @@ public class IntakeSubsystem extends SubsystemBase {
                 stopIntakeMotor();
                 stopPivotMotor();
             }).andThen(run(() -> {
-                m_intakeMotorFx.feed();
+                // No feed needed for SparkMax
             })).withName("Idle")
         );
     }
 
     @Override
     public void periodic() {
-        m_intakeMotorFx.feed();
-
         m_pivotPIDController.setTolerance(getPivotTolerance());
 
         // Update unwrapped encoder tracking before publishing values
@@ -159,27 +171,19 @@ public class IntakeSubsystem extends SubsystemBase {
 
     public double getPresetPosition(PivotPreset preset) {
         switch (preset) {
-            case STOW:
-                return getStowPosition();
-            case RAMP:
-                return getRampPosition();
-            case INTAKE:
-                return getIntakePosition();
-            default:
-                return getStowPosition();
+            case STOW: return getStowPosition();
+            case RAMP: return getRampPosition();
+            case INTAKE: return getIntakePosition();
+            default: return getStowPosition();
         }
     }
 
     public String getPresetName(PivotPreset preset) {
         switch (preset) {
-            case STOW:
-                return "STOW";
-            case RAMP:
-                return "RAMP";
-            case INTAKE:
-                return "INTAKE";
-            default:
-                return "UNKNOWN";
+            case STOW: return "STOW";
+            case RAMP: return "RAMP";
+            case INTAKE: return "INTAKE";
+            default: return "UNKNOWN";
         }
     }
 
@@ -188,7 +192,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public void stopIntakeMotor() {
-        m_intakeMotorFx.set(0.0);
+        m_intakeMotor.set(0.0);
     }
 
     public void resetPivotPID() {
@@ -298,51 +302,9 @@ public class IntakeSubsystem extends SubsystemBase {
             .withName("MoveTo" + getPresetName(preset));
     }
 
-    public Command moveToStowPosition() {
-        return moveToPreset(PivotPreset.STOW);
-    }
-
-    public Command moveToRampPosition() {
-        return moveToPreset(PivotPreset.RAMP);
-    }
-
-    public Command moveToIntakePosition() {
-        return moveToPreset(PivotPreset.INTAKE);
-    }
-
-    public void autonMovePivotToPositionStep(double setpoint) {
-        if (!isPivotEncoderConnected()) {
-            stopPivotMotor();
-            return;
-        }
-
-        double output = calculatePivotOutput(setpoint);
-        m_pivotMotor.set(output);
-    }
-
-    public boolean isPivotAtPosition(double setpoint) {
-        return Math.abs(getPivotEncoderPosition() - setpoint) <= getPivotTolerance();
-    }
-
-    public boolean isPivotAtPreset(PivotPreset preset) {
-        return isPivotAtPosition(getPresetPosition(preset));
-    }
-
-    public void autonStopPivotMotor() {
-        stopPivotMotor();
-    }
-
-    public void autonMoveToStowPositionStep() {
-        autonMovePivotToPositionStep(getStowPosition());
-    }
-
-    public void autonMoveToRampPositionStep() {
-        autonMovePivotToPositionStep(getRampPosition());
-    }
-
-    public void autonMoveToIntakePositionStep() {
-        autonMovePivotToPositionStep(getIntakePosition());
-    }
+    public Command moveToStowPosition() { return moveToPreset(PivotPreset.STOW); }
+    public Command moveToRampPosition() { return moveToPreset(PivotPreset.RAMP); }
+    public Command moveToIntakePosition() { return moveToPreset(PivotPreset.INTAKE); }
 
     public Command movePivot(double speed) {
         return startEnd(
@@ -352,18 +314,18 @@ public class IntakeSubsystem extends SubsystemBase {
                 resetPivotPID();
                 m_pivotMotor.set(speed);
             },
-            () -> stopPivotMotor()
+            this::stopPivotMotor
         ).withName("MovePivot");
     }
 
     public Command moveIntake(double speed) {
         return startEnd(
-            () -> m_intakeMotorFx.set(speed),
-            () -> stopIntakeMotor()
+            () -> m_intakeMotor.set(speed),
+            this::stopIntakeMotor
         ).withName("MoveIntake");
     }
 
     public void autonMoveIntake(double speed) {
-        m_intakeMotorFx.set(speed);
+        m_intakeMotor.set(speed);
     }
 }
