@@ -138,10 +138,10 @@ public class RobotContainer {
 
     // Manual pivot jog
     new JoystickButton(m_operatorController, XboxController.Button.kLeftBumper.value)
-        .whileTrue(m_intake.movePivot(-0.25));
+        .whileTrue(m_intake.movePivot(-0.65));
 
     new JoystickButton(m_operatorController, XboxController.Button.kRightBumper.value)
-        .whileTrue(m_intake.movePivot(0.65));
+        .whileTrue(m_intake.movePivot(0.45));
 
     // Intake roller
     new JoystickButton(m_operatorController, XboxController.Button.kX.value)
