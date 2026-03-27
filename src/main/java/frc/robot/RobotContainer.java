@@ -147,18 +147,18 @@ public class RobotContainer {
     new JoystickButton(m_operatorController, XboxController.Button.kX.value)
         .whileTrue(m_intake.moveIntake(-0.5));
 
-    new JoystickButton(m_operatorController, XboxController.Button.kY.value)
-        .whileTrue(m_intake.moveIntake(0.5));
+  // Re-map operator buttons: Y -> STOW, B -> RAMP, A -> INTAKE
+  new JoystickButton(m_operatorController, XboxController.Button.kY.value)
+    .onTrue(m_intake.moveToStowPosition());
 
     // Pivot presets
-    new JoystickButton(m_operatorController, XboxController.Button.kA.value)
-        .onTrue(m_intake.moveToIntakePosition());
+  new JoystickButton(m_operatorController, XboxController.Button.kA.value)
+    .onTrue(m_intake.moveToIntakePosition());
 
-    new JoystickButton(m_operatorController, XboxController.Button.kB.value)
-        .onTrue(m_intake.moveToRampPosition());
+  new JoystickButton(m_operatorController, XboxController.Button.kB.value)
+    .onTrue(m_intake.moveToRampPosition());
 
-    new JoystickButton(m_operatorController, XboxController.Button.kStart.value)
-        .onTrue(m_intake.moveToStowPosition());
+  // Start button no longer maps to stow; Y now triggers stow
   }
 
   /**

@@ -44,9 +44,12 @@ public class IntakeSubsystem extends SubsystemBase {
     // These are ONLY starting placeholders for this year's robot.
     // Tune them on the real robot and update them on SmartDashboard / Shuffleboard.
     // Because the encoder mounting/index is different this year, do NOT trust last year's values.
-    private static final double DEFAULT_STOW_POSITION = 0.60;
-    private static final double DEFAULT_RAMP_POSITION = 0.42;
-    private static final double DEFAULT_INTAKE_POSITION = 0.24;
+    // The DutyCycleEncoder returns a raw duty value in [0,1). Previously we stored
+    // raw values here; convert them to degrees for safer angle math (0..360).
+    // We initialize defaults by converting the old raw defaults -> degrees.
+    private static final double DEFAULT_STOW_POSITION = 0.18 * 360.0; // ~64.8 deg
+    private static final double DEFAULT_RAMP_POSITION = 0.0029 * 360.0; // ~1.044 deg
+    private static final double DEFAULT_INTAKE_POSITION = 0.88 * 360.0; // ~316.8 deg
 
     private static final double DEFAULT_PIVOT_TOLERANCE = 0.015;
     private static final double DEFAULT_PIVOT_UP_MAX_OUTPUT = 0.65;
@@ -56,6 +59,11 @@ public class IntakeSubsystem extends SubsystemBase {
     private final SparkMax m_pivotMotor;
     private final DutyCycleEncoder m_pivotEncoder;
     private final PIDController m_pivotPIDController;
+    // For encoder unwrap/continuous angle tracking
+    private double m_lastRawEncoder = 0.0;
+    private double m_unwrappedRevolutions = 0.0;
+    // Optional zero/reference offset in revolutions
+    private double m_encoderZeroOffset = 0.0;
 
     public IntakeSubsystem() {
         m_intakeMotorFx = new TalonFX(Constants.CanIds.IntakeCanIds.kIntakeMotorCanId);
@@ -79,9 +87,10 @@ public class IntakeSubsystem extends SubsystemBase {
 
         m_pivotPIDController.setTolerance(DEFAULT_PIVOT_TOLERANCE);
 
-        SmartDashboard.putNumber(SD_STOW_POSITION, DEFAULT_STOW_POSITION);
-        SmartDashboard.putNumber(SD_RAMP_POSITION, DEFAULT_RAMP_POSITION);
-        SmartDashboard.putNumber(SD_INTAKE_POSITION, DEFAULT_INTAKE_POSITION);
+    // Dashboard defaults are in degrees now (0..360). Team can edit these live.
+    SmartDashboard.putNumber(SD_STOW_POSITION, DEFAULT_STOW_POSITION);
+    SmartDashboard.putNumber(SD_RAMP_POSITION, DEFAULT_RAMP_POSITION);
+    SmartDashboard.putNumber(SD_INTAKE_POSITION, DEFAULT_INTAKE_POSITION);
         SmartDashboard.putNumber(SD_PIVOT_TOLERANCE, DEFAULT_PIVOT_TOLERANCE);
         SmartDashboard.putNumber(SD_PIVOT_UP_MAX, DEFAULT_PIVOT_UP_MAX_OUTPUT);
         SmartDashboard.putNumber(SD_PIVOT_DOWN_MAX, DEFAULT_PIVOT_DOWN_MAX_OUTPUT);
@@ -104,13 +113,18 @@ public class IntakeSubsystem extends SubsystemBase {
 
         m_pivotPIDController.setTolerance(getPivotTolerance());
 
-        SmartDashboard.putNumber(SD_PIVOT_ENCODER, getPivotEncoderPosition());
+        // Update unwrapped encoder tracking before publishing values
+        updateEncoderUnwrap();
+
+        // Publish angle in degrees for easier tuning
+        SmartDashboard.putNumber(SD_PIVOT_ENCODER, getPivotAngleDegrees());
         SmartDashboard.putBoolean(SD_PIVOT_CONNECTED, isPivotEncoderConnected());
         SmartDashboard.putNumber(SD_PIVOT_MOTOR_OUTPUT, m_pivotMotor.get());
         SmartDashboard.putBoolean(SD_PIVOT_AT_SETPOINT, m_pivotPIDController.atSetpoint());
     }
 
     public double getPivotEncoderPosition() {
+        // For backwards compatibility return the raw duty cycle value
         return m_pivotEncoder.get();
     }
 
@@ -119,6 +133,7 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public double getStowPosition() {
+        // Dashboard stores degrees now
         return SmartDashboard.getNumber(SD_STOW_POSITION, DEFAULT_STOW_POSITION);
     }
 
@@ -185,13 +200,70 @@ public class IntakeSubsystem extends SubsystemBase {
     }
 
     public double calculatePivotOutput(double setpoint) {
-        double pidOutput = m_pivotPIDController.calculate(getPivotEncoderPosition(), setpoint);
+        // PID operates in degrees. Ensure we compare angles properly by using
+        // the continuous angle from the encoder and wrapping the error to [-180,180].
+        double currentDeg = getPivotAngleDegrees();
+
+        // Compute minimal angle difference (setpoint and current are in degrees)
+        double error = ((setpoint - currentDeg + 180.0) % 360.0 + 360.0) % 360.0 - 180.0;
+
+        double pidOutput = m_pivotPIDController.calculate(0.0, error);
         pidOutput = clampPivotOutput(pidOutput);
 
         SmartDashboard.putNumber(SD_PIVOT_SETPOINT, setpoint);
         SmartDashboard.putNumber(SD_PIVOT_PID_OUTPUT, pidOutput);
 
         return pidOutput;
+    }
+
+    // ------------------ Encoder unwrap / helpers ------------------
+    /**
+     * Call periodically to update internal unwrap state. Handles crossing the
+     * 0/1 duty-cycle wrap and maintains a continuous revolution count.
+     */
+    private void updateEncoderUnwrap() {
+        double raw = m_pivotEncoder.get();
+        // If this is the first time, initialize
+        if (m_lastRawEncoder == 0.0 && m_unwrappedRevolutions == 0.0) {
+            m_lastRawEncoder = raw;
+            return;
+        }
+
+        double delta = raw - m_lastRawEncoder;
+        // Detect large jumps across the 0/1 boundary
+        if (delta > 0.5) {
+            // wrapped negative (e.g., 0.99 -> 0.01 gives delta ~ -0.98)
+            m_unwrappedRevolutions -= 1.0;
+        } else if (delta < -0.5) {
+            // wrapped positive
+            m_unwrappedRevolutions += 1.0;
+        }
+
+        m_lastRawEncoder = raw;
+    }
+
+    /**
+     * Returns the continuous pivot position in revolutions (can be negative/large).
+     */
+    public double getPivotRevolutions() {
+        // raw in [0,1) plus unwrapped revolutions, minus any zero offset
+        return (m_lastRawEncoder + m_unwrappedRevolutions) - m_encoderZeroOffset;
+    }
+
+    /**
+     * Returns the pivot angle in degrees in a continuous domain (can be outside 0..360).
+     */
+    public double getPivotAngleDegrees() {
+        return getPivotRevolutions() * 360.0;
+    }
+
+    /**
+     * Reset the current position to be treated as zero reference.
+     */
+    public void zeroPivotReference() {
+        // Ensure unwrap is up-to-date
+        updateEncoderUnwrap();
+        m_encoderZeroOffset = m_lastRawEncoder + m_unwrappedRevolutions;
     }
 
     public Command movePivotToPosition(double setpoint) {
